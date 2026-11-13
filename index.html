@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>과일 찹쌀떡 만들기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFFDFA;--ink:#3B2833;--pink:#FF5C8A;--gray:#F4F2F3;--white:#FFFFFF}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Gowun Dodum',sans-serif}
+body{display:flex;justify-content:center;align-items:center;overflow:hidden}
+#app{width:100%;max-width:390px;height:100%;max-height:844px;display:flex;flex-direction:column;gap:12px;padding-block:20px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));user-select:none;-webkit-user-select:none}
+.btn:focus-visible,#nick:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+header small{font-size:13px;display:block;margin-bottom:2px}
+h1{font-family:'Jua',sans-serif;font-size:30px;font-weight:400;line-height:1.1}
+.chip{font-family:'Jua',sans-serif;font-size:16px;background:var(--white);border:3px solid var(--ink);border-radius:99px;padding:6px 14px;box-shadow:0 4px 0 var(--ink);white-space:nowrap}
+#stage{flex:1;min-height:0;position:relative}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.bottom{height:220px;flex:none}
+.panel{height:100%;display:flex;flex-direction:column;gap:12px}
+#meter{display:flex;flex-direction:column;gap:12px}
+.panel[hidden],.btn[hidden],#meter[hidden]{display:none}
+.row{display:flex;align-items:baseline;justify-content:space-between;font-size:15px}
+.row b{font-family:'Jua',sans-serif;font-size:26px;font-weight:400;color:var(--pink);margin-left:6px}
+.gauge{height:28px;border:3px solid var(--ink);border-radius:99px;background:var(--gray);box-shadow:0 4px 0 var(--ink);overflow:hidden}
+.gauge i{display:block;height:100%;width:0;background:var(--pink);border-right:3px solid var(--ink);transition:width .15s}
+.hint{font-size:15px;line-height:1.5;text-align:center;margin:auto 0}
+.btn{font-family:'Jua',sans-serif;font-size:22px;color:var(--ink);background:var(--pink);border:3px solid var(--ink);border-radius:18px;padding:13px 10px;box-shadow:0 6px 0 var(--ink);cursor:pointer;transition:transform .06s,box-shadow .06s}
+.btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--ink)}
+.btn.sub{background:var(--white)}
+.btn.pop{animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(.5)}100%{transform:scale(1)}}
+.res-top{display:flex;align-items:center;gap:14px}
+.score{font-family:'Jua',sans-serif;line-height:1;white-space:nowrap}
+.score b{font-size:56px;font-weight:400;color:var(--pink);-webkit-text-stroke:2px var(--ink);text-shadow:0 4px 0 var(--ink)}
+.score span{font-size:20px;margin-left:2px}
+.comment{font-family:'Jua',sans-serif;font-size:21px;line-height:1.25}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;list-style:none}
+.stats li{background:var(--white);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);padding:5px 0;text-align:center;font-size:12px}
+.stats b{display:block;font-family:'Jua',sans-serif;font-size:19px;font-weight:400}
+.stats b small{font-size:12px}
+#retry{margin-top:auto}
+#app{position:relative}
+#intro{position:absolute;inset:0;z-index:5;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:16px;padding:0 28px}
+#intro[hidden]{display:none}
+#intro h2{font-family:'Jua',sans-serif;font-size:36px;font-weight:400;text-align:center;line-height:1.2}
+#intro p{text-align:center;font-size:16px}
+#nick{font-family:'Gowun Dodum',sans-serif;font-size:20px;color:var(--ink);text-align:center;background:var(--white);border:3px solid var(--ink);border-radius:16px;padding:13px;box-shadow:0 5px 0 var(--ink);outline:none}
+#nick:focus{box-shadow:0 7px 0 var(--ink);transform:translateY(-2px)}
+#go:disabled{background:var(--gray);cursor:default}
+.done{font-family:'Jua',sans-serif;font-size:24px;line-height:1.2;text-align:center}
+.done b{font-size:46px;font-weight:400;color:var(--pink);-webkit-text-stroke:2px var(--ink);text-shadow:0 4px 0 var(--ink);margin:0 2px}
+.btns{display:flex;gap:12px;margin-top:auto}.btns .btn{flex:1}
+.link{font-family:'Gowun Dodum',sans-serif;font-size:15px;color:var(--ink);background:none;border:none;text-decoration:underline;cursor:pointer;align-self:center;padding:6px}
+#rank{position:absolute;inset:0;z-index:6;background:var(--bg);display:flex;flex-direction:column;gap:14px;padding:24px max(16px,env(safe-area-inset-left,0px))}
+#rank h2{font-family:'Jua',sans-serif;font-size:30px;font-weight:400}
+#rankList{list-style:none;display:flex;flex-direction:column;gap:9px;flex:1;min-height:0;overflow:auto;padding:2px 2px 8px}
+#rankList li{display:flex;align-items:center;gap:12px;background:var(--white);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);padding:7px 14px}
+#rankList li.me{border-width:5px;padding:5px 12px}
+#rankList .n{font-family:'Jua',sans-serif;font-size:20px;width:28px}
+#rankList .nm{flex:1;min-width:0;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rankList b{font-family:'Jua',sans-serif;font-size:24px;font-weight:400;color:var(--pink);font-variant-numeric:tabular-nums}
+#rankMsg{text-align:center;font-size:15px}
+#rankMsg:empty{display:none}
+#result .comment{font-size:17px;text-align:center;font-family:'Gowun Dodum',sans-serif;margin-top:-6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div><small id="stepNo">STEP 1 / 6</small><h1 id="title">피 고르기</h1></div>
+    <span class="chip" id="fruitName">딸기</span>
+  </header>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div class="bottom">
+    <section class="panel" id="play">
+      <div id="meter">
+        <div class="row"><span><span id="label"></span><b id="pct">0%</b></span><span id="sub"></span></div>
+        <div class="gauge"><i id="bar"></i></div>
+      </div>
+      <p class="hint" id="hint"></p>
+      <button class="btn" id="act" hidden></button>
+    </section>
+    <section class="panel" id="result" hidden>
+      <p class="done"><span id="who"></span>의 <b id="score">0</b>점 찹쌀떡 완성!</p>
+      <p class="comment" id="comment"></p>
+      <ul class="stats" id="stats"></ul>
+      <div class="btns"><button class="btn" id="rankBtn" hidden>랭킹 TOP10</button><button class="btn sub" id="retry">다시하기</button></div>
+    </section>
+  </div>
+  <form id="intro">
+    <h2>과일 찹쌀떡<br>만들기</h2>
+    <p>닉네임을 입력해 주세요</p>
+    <input id="nick" maxlength="8" autocomplete="off" placeholder="예) 지니" aria-label="닉네임">
+    <button class="btn" id="go" disabled>시작하기</button>
+    <button type="button" class="link" id="rankLink" hidden>랭킹 보기</button>
+  </form>
+  <section id="rank" hidden>
+    <h2>랭킹 TOP10</h2>
+    <ol id="rankList"></ol>
+    <p id="rankMsg">불러오는 중…</p>
+    <button class="btn sub" id="rankClose">닫기</button>
+  </section>
+</div>
+<script>
+'use strict';
+const INK='#3B2833',GRAY='#F4F2F3',WHITE='#FFFFFF',TAU=Math.PI*2;
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
+const easeOut=x=>1-(1-x)**3, easeBack=x=>1+2.7*(x-1)**3+1.7*(x-1)**2;
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const std=a=>{const m=mean(a);return Math.sqrt(mean(a.map(v=>(v-m)**2)))};
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------- 드로잉 헬퍼 ---------- */
+function circ(c,x,y,r){c.beginPath();c.arc(x,y,r,0,TAU)}
+function ell(c,x,y,rx,ry,rot=0){c.beginPath();c.ellipse(x,y,rx,ry,rot,0,TAU)}
+// 스티커 스타일: 아래로 떨어지는 단단한 그림자 + 굵은 외곽선
+function sticker(c,path,fill,off=6,lw=4){
+  c.save();c.translate(0,off);path(c);c.fillStyle=INK;c.fill();c.restore();
+  path(c);c.fillStyle=fill;c.fill();c.lineWidth=lw;c.strokeStyle=INK;c.stroke();
+}
+function smoothPath(c,P){
+  const n=P.length;c.beginPath();c.moveTo((P[n-1][0]+P[0][0])/2,(P[n-1][1]+P[0][1])/2);
+  for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n];c.quadraticCurveTo(a[0],a[1],(a[0]+b[0])/2,(a[1]+b[1])/2)}
+  c.closePath();
+}
+function dots(c,list,r,colors){list.forEach((d,i)=>{c.fillStyle=colors[i%colors.length];circ(c,d[0]*r,d[1]*r,d[2]*r);c.fill()})}
+function scatter(seed,n,maxR,minS,maxS){const R=rng(seed),out=[];while(out.length<n){const x=R()*2-1,y=R()*2-1;if(x*x+y*y<maxR*maxR)out.push([x,y,minS+R()*(maxS-minS)])}return out}
+const BEAN_DOTS=scatter(7,40,.85,.03,.06),FLOUR=scatter(3,46,.9,.012,.024);
+
+/* ---------- 속 재료 데이터 (과일 추가는 FRUITS에만) ---------- */
+const BEAN={name:'팥 앙금',r:58,color:'#6E2F37',
+  draw(c,r){sticker(c,c=>ell(c,0,0,r,r*.94),this.color,4,4);c.save();ell(c,0,0,r-2,r*.94-2);c.clip();dots(c,BEAN_DOTS,r,['#8B4650','#55222A']);c.restore()},
+  section(c,r){c.fillStyle=this.color;circ(c,0,0,r);c.fill();dots(c,BEAN_DOTS,r,['#8B4650','#55222A'])}};
+const FRUITS={
+  strawberry:{name:'딸기',r:44,color:'#E8484F',
+    draw(c,r){
+      const body=c=>{c.beginPath();c.moveTo(0,r);c.bezierCurveTo(-r*.55,r*.8,-r*1.05,r*.15,-r*.92,-r*.38);c.bezierCurveTo(-r*.8,-r*.9,r*.8,-r*.9,r*.92,-r*.38);c.bezierCurveTo(r*1.05,r*.15,r*.55,r*.8,0,r);c.closePath()};
+      sticker(c,body,this.color,5,4);
+      c.fillStyle='#FFE49A';
+      [[-.45,-.3],[0,-.38],[.45,-.3],[-.62,.08],[-.2,.02],[.2,.02],[.62,.08],[-.36,.42],[0,.45],[.36,.42],[0,.78]].forEach(([x,y])=>{ell(c,x*r,y*r,r*.045,r*.07);c.fill()});
+      c.save();c.globalAlpha=.75;c.strokeStyle=WHITE;c.lineWidth=4;c.beginPath();c.arc(-r*.4,-r*.1,r*.32,Math.PI*1.05,Math.PI*1.4);c.stroke();c.restore();
+      c.beginPath();for(let k=0;k<10;k++){const a=k/10*TAU-Math.PI/2,rr=k%2?r*.16:r*.44;c.lineTo(Math.cos(a)*rr,-r*.7+Math.sin(a)*rr*.55)}c.closePath();
+      c.fillStyle='#5DB55A';c.fill();c.lineWidth=3;c.strokeStyle=INK;c.stroke();
+    },
+    section(c,r){
+      c.fillStyle=this.color;circ(c,0,0,r);c.fill();
+      c.fillStyle='#F6A196';ell(c,0,0,r*.72,r*.8);c.fill();
+      c.strokeStyle='#FFF4EE';c.lineWidth=3;c.beginPath();for(let k=0;k<8;k++){const a=k/8*TAU;c.moveTo(0,0);c.lineTo(Math.cos(a)*r*.62,Math.sin(a)*r*.7)}c.stroke();
+      c.fillStyle='#FFF4EE';ell(c,0,0,r*.14,r*.38);c.fill();
+    }},
+  shine:{name:'샤인머스캣',r:40,color:'#B7D96B',
+    draw(c,r){
+      c.fillStyle='#7A9A3A';c.lineWidth=3;c.strokeStyle=INK;c.beginPath();c.roundRect(-r*.08,-r*1.22,r*.16,r*.32,3);c.fill();c.stroke();
+      sticker(c,c=>circ(c,0,0,r),this.color,5,4);
+      c.fillStyle='#DDEFA6';ell(c,-r*.3,-r*.32,r*.32,r*.2,-.6);c.fill();
+      c.fillStyle=WHITE;circ(c,-r*.45,-r*.45,r*.07);c.fill();
+    },
+    section(c,r){c.fillStyle=this.color;circ(c,0,0,r);c.fill();c.fillStyle='#CFE88E';circ(c,0,0,r*.72);c.fill();c.fillStyle='#E4F3B8';circ(c,0,0,r*.34);c.fill()}},
+  tangerine:{name:'귤',r:44,color:'#FFA63D',
+    draw(c,r){
+      sticker(c,c=>circ(c,0,0,r),this.color,5,4);
+      c.strokeStyle='#FFD592';c.lineWidth=3;c.beginPath();for(let k=0;k<9;k++){const a=k/9*TAU;c.moveTo(Math.cos(a)*r*.15,Math.sin(a)*r*.15);c.lineTo(Math.cos(a)*r*.9,Math.sin(a)*r*.9)}c.stroke();
+      c.fillStyle='#FFF0D2';circ(c,0,0,r*.15);c.fill();
+    },
+    section(c,r){
+      c.fillStyle=this.color;circ(c,0,0,r);c.fill();
+      c.strokeStyle='#FFD592';c.lineWidth=2.5;c.beginPath();for(let k=0;k<9;k++){const a=k/9*TAU;c.moveTo(0,0);c.lineTo(Math.cos(a)*r,Math.sin(a)*r)}c.stroke();
+      c.fillStyle='#FFF0D2';circ(c,0,0,r*.18);c.fill();
+    }},
+  persimmon:{name:'홍시',r:44,color:'#F2742B',
+    draw(c,r){
+      sticker(c,c=>ell(c,0,0,r,r*.92),this.color,5,4);
+      c.fillStyle='#FFA266';ell(c,-r*.38,-r*.38,r*.26,r*.15,-.7);c.fill();
+      c.beginPath();for(let k=0;k<4;k++){const a=k/4*TAU+Math.PI/4;c.moveTo(0,0);c.quadraticCurveTo(Math.cos(a-.5)*r*.3,Math.sin(a-.5)*r*.3,Math.cos(a)*r*.4,Math.sin(a)*r*.4);c.quadraticCurveTo(Math.cos(a+.5)*r*.3,Math.sin(a+.5)*r*.3,0,0)}
+      c.fillStyle='#7C8F3A';c.fill();c.lineWidth=3;c.strokeStyle=INK;c.stroke();
+      c.fillStyle='#5E4A2E';circ(c,0,0,r*.08);c.fill();c.stroke();
+    },
+    section(c,r){
+      c.fillStyle=this.color;circ(c,0,0,r);c.fill();c.fillStyle='#F99A55';circ(c,0,0,r*.7);c.fill();
+      c.strokeStyle='#FFC48E';c.lineWidth=3;c.beginPath();for(let k=0;k<8;k++){const a=k/8*TAU;c.moveTo(0,0);c.lineTo(Math.cos(a)*r*.5,Math.sin(a)*r*.5)}c.stroke();
+      c.fillStyle='#FFD9AE';circ(c,0,0,r*.12);c.fill();
+    }},
+};
+
+/* ---------- 효과음 (Web Audio 합성) ---------- */
+const sfx={
+  ctx:null,s:null,
+  a(){if(!this.ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;this.ctx=new A()}if(this.ctx.state==='suspended')this.ctx.resume();return this.ctx},
+  env(g,t,peak,dur){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dur)},
+  tone(type,f0,f1,dur,peak){const a=this.a();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);this.env(g,t,peak,dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.02)},
+  noise(dur,type,f0,peak,f1){const a=this.a();if(!a)return;const t=a.currentTime,b=a.createBuffer(1,a.sampleRate*dur|0,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=b;f.type=type;f.Q.value=1.2;f.frequency.setValueAtTime(f0,t);if(f1)f.frequency.exponentialRampToValueAtTime(f1,t+dur);this.env(g,t,peak,dur);n.connect(f).connect(g).connect(a.destination);n.start(t)},
+  pop(){this.tone('sine',820,180,.11,.45);this.noise(.03,'highpass',2000,.12)},           // 뽁
+  boing(){this.tone('triangle',260,130,.18,.12)},
+  squish(){this.tone('sine',320,90,.35,.3);this.noise(.3,'lowpass',900,.15,300)},
+  thud(){this.tone('sine',150,55,.18,.5)},
+  cut(){this.noise(.25,'highpass',1500,.3,6000)},
+  // 연속음: 쭈욱(늘리기) / 드르륵(밀대)
+  stretchStart(){const a=this.a();if(!a||this.s)return;
+    const o=a.createOscillator(),l=a.createOscillator(),lg=a.createGain(),f=a.createBiquadFilter(),g=a.createGain();
+    o.type='sawtooth';o.frequency.value=130;l.frequency.value=22;lg.gain.value=18;l.connect(lg).connect(o.frequency);
+    f.type='lowpass';f.frequency.value=600;f.Q.value=6;g.gain.value=0;o.connect(f).connect(g).connect(a.destination);o.start();l.start();this.s={o,l,f,g}},
+  stretch(amt,speed){if(!this.s)return;const t=this.ctx.currentTime;this.s.o.frequency.setTargetAtTime(70+amt*370,t,.05);this.s.f.frequency.setTargetAtTime(400+amt*1600,t,.05);this.s.g.gain.setTargetAtTime(Math.min(.14,speed*.012),t,.04)},
+  stretchStop(){if(!this.s)return;const{o,l,g}=this.s,t=this.ctx.currentTime;g.gain.setTargetAtTime(0,t,.03);o.stop(t+.2);l.stop(t+.2);this.s=null},
+};
+
+/* ---------- 상태 ---------- */
+const cv=$('#cv'),ctx=cv.getContext('2d');
+const W=360,H=400,C={x:180,y:196};          // 논리 좌표계, 접시 중심
+const N=36,SIG=3,IDEAL=128,PORTIONS=[.8,1,1.25];
+const STEPS={pick:[1,'피 고르기'],roll:[2,'밀대로 밀기'],place:[3,'속 올리기'],wrap:[4,'감싸기'],knife:[5,'반으로 자르기'],result:[6,'단면 평가']};
+let view={s:1,ox:0,oy:0,dpr:1};
+let fruitId,F,state,stateT,ptr,floaters,shake,frame=0,startTime,flags,R;
+let portions,chosen,dough,roll,place,Cf,Rf,foldR,Rm,pts,samples,drag,hover,coverage,swipe,cut,res;
+const A=i=>i/N*TAU-Math.PI/2;                 // 점 i의 각도
+
+function start(id){
+  fruitId=FRUITS[id]?id:'strawberry';F=FRUITS[fruitId];R=rng(Date.now()&0xffff);
+  portions=[...PORTIONS].sort(()=>R()-.5).map((v,k)=>({v,x:70+k*110,y:196,r:38*Math.sqrt(v)}));
+  chosen=null;dough=null;roll=null;place=null;pts=null;drag=null;hover=-1;coverage=0;swipe=null;cut=null;res=null;
+  floaters=[];shake=0;flags={};startTime=performance.now();ptr=null;
+  $('#fruitName').textContent=F.name;$('#play').hidden=false;$('#result').hidden=true;
+  go('pick');
+}
+function go(s){
+  state=s;stateT=0;const st=STEPS[s];if(st){$('#stepNo').textContent=`STEP ${st[0]} / 6`;$('#title').textContent=st[1]}
+  const P={pick:['',`동그랗게 소분된 피 중 하나를 눌러 접시로 가져와요<br>양이 조금씩 달라요`,null],
+    roll:['피 크기','밀대로 여러 방향으로 밀어 동그랗게 펴요<br>빠르게 세게 밀면 울퉁불퉁해져요','다 밀었어요'],
+    place:['','흔들리는 팥 앙금을 눌러 피 가운데에 올려요',null],
+    wrap:['과일 덮임','피 가장자리를 잡고 과일 쪽으로 쭈욱 당겨요','꾹 오므리기'],
+    knife:['','칼로 찹쌀떡을 슥 그어 반으로 잘라요<br>가운데를 지날수록 단면이 예뻐요',null]}[s];
+  if(!P)return;
+  $('#meter').hidden=!P[0];$('#label').textContent=P[0];$('#hint').innerHTML=P[1];
+  const b=$('#act');b.hidden=true;b.textContent=P[2]||'';
+}
+function showAct(on){const b=$('#act');if(on&&b.hidden){b.hidden=false;b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}if(!on)b.hidden=true}
+function gauge(p,sub){$('#pct').textContent=Math.round(p*100)+'%';$('#bar').style.width=Math.min(100,p*100)+'%';$('#sub').textContent=sub}
+
+/* ---------- 1. 피 고르기 ---------- */
+function pickAt(x,y){
+  const p=portions.find(p=>Math.hypot(x-p.x,y-p.y)<p.r+10);if(!p)return;
+  chosen=p;sfx.pop();state='toPlate';stateT=0;
+}
+
+/* ---------- 2. 밀대 ---------- */
+function startRoll(){
+  dough={v:chosen.v,r0:chosen.r,r:Array(N).fill(chosen.r)};roll={on:false,a:0};go('roll');updateRollUI();
+}
+const doughMean=()=>mean(dough.r);
+// 같은 양의 반죽이 넓어질수록 얇아짐. 중간 양을 IDEAL 크기로 밀면 1
+const doughThick=()=>(dough.r0**2/mean(dough.r.map(r=>r*r)))/(38**2/IDEAL**2);
+function rollMove(x,y,now){
+  const dx=x-roll.x,dy=y-roll.y,L=Math.hypot(dx,dy),dt=Math.max(1,now-roll.t);roll.x=x;roll.y=y;roll.t=now;
+  if(L<.5)return;
+  const ang=Math.atan2(dy,dx);roll.a+=(((ang+Math.PI/2)-roll.a+Math.PI*1.5)%Math.PI-Math.PI/2)*.3;   // 밀대는 진행 방향에 수직
+  if(Math.hypot(x-C.x,y-C.y)>doughMean()+30){sfx.stretch(0,0);return}
+  const force=clamp(L/dt/.45,.3,3);                 // 빠를수록 세게
+  for(let i=0;i<N;i++){
+    const c=Math.cos(A(i)-ang),g=L*.1*force*(.75*Math.max(0,c)**2+.25*c*c);
+    const bump=force>1.6?(Math.random()-.5)*(force-1.6)*1.4:0;   // 너무 세게 밀면 울퉁불퉁
+    dough.r[i]=Math.min(150,dough.r[i]+g*(1+bump));
+  }
+  const r=dough.r.slice();for(let i=0;i<N;i++)dough.r[i]=r[i]*.9+(r[(i+N-1)%N]+r[(i+1)%N])*.05;   // 모서리가 뾰족해지지 않게
+  sfx.stretch(.05,L*.6);updateRollUI();
+}
+function updateRollUI(){
+  const m=doughMean(),t=doughThick();
+  gauge(m/IDEAL,`두께 ${t>1.25?'두꺼움':t<.8?'너무 얇음':t<.92?'얇음':'적당'}`);
+  showAct(m>=IDEAL*.8);
+}
+function finishRoll(){
+  const r=dough.r,m=mean(r);
+  roll.result={size:+(m/IDEAL).toFixed(3),roundness:+clamp(1-std(r)/m*5,0,1).toFixed(3),thickness:+doughThick().toFixed(3)};
+  place={phase:'bean',drop:null,bean:null,fruit:null};go('place');
+}
+
+/* ---------- 3. 속 올리기 ---------- */
+const doughCenter=()=>{let x=0,y=0;dough.r.forEach((r,i)=>{x+=C.x+Math.cos(A(i))*r;y+=C.y+Math.sin(A(i))*r});return[x/N,y/N]};
+function swingPos(){const base=place.phase==='bean'?doughCenter():place.bean,t=stateT;return[base[0]+Math.sin(t*.0026)*60,base[1]+Math.sin(t*.0041+1)*36]}
+function dropItem(){
+  if(place.drop)return;place.drop={pos:swingPos(),t:0};
+}
+function landItem(){
+  const p=place.drop.pos;place[place.phase]=p;place.drop=null;sfx.thud();sfx.pop();shake=4;
+  if(place.phase==='bean'){place.phase='fruit';stateT=0;$('#hint').innerHTML=`이번엔 ${F.name}! 앙금 가운데에 올려요`}
+  else setTimeout(startWrap,450);
+}
+
+/* ---------- 4. 감싸기 ---------- */
+function startWrap(){
+  const dc=doughCenter();
+  place.result={beanOffset:+Math.hypot(place.bean[0]-dc[0],place.bean[1]-dc[1]).toFixed(1),fruitOffset:+Math.hypot(place.fruit[0]-place.bean[0],place.fruit[1]-place.bean[1]).toFixed(1)};
+  Cf={x:place.bean[0],y:place.bean[1]};
+  Rf=Math.min(76,Math.max(BEAN.r,F.r+place.result.fruitOffset));foldR=Rf+6;Rm=Rf+24;
+  const th=clamp(roll.result.thickness,.6,1.2);
+  pts=dough.r.map((r,i)=>{const a=A(i),x=C.x+Math.cos(a)*r,y=C.y+Math.sin(a)*r,tear=(Math.hypot(x-Cf.x,y-Cf.y)+60)*th;
+    return{a,rx:x,ry:y,hx:x,hy:y,x,y,vx:0,vy:0,thin:1,lift:false,tear,thin0:tear*.6}});
+  samples=[];for(let y=-Rf;y<=Rf;y+=6)for(let x=-Rf;x<=Rf;x+=6)if(x*x+y*y<=(Rf*.95)**2)samples.push([Cf.x+x,Cf.y+y]);
+  go('wrap');gauge(0,'');
+}
+const ringD=(i,j)=>{const d=Math.abs(i-j);return Math.min(d,N-d)};
+const weight=(i,j)=>{const d=ringD(i,j);return d>6?0:Math.exp(-d*d/(2*SIG*SIG))};
+const foldPt=p=>[Cf.x+Math.cos(p.a)*foldR,Cf.y+Math.sin(p.a)*foldR];
+// 잡은 점은 포인터로, 주변 점은 거리에 따라 포인터 쪽으로 같이 끌림
+function targets(){return pts.map((p,i)=>{
+  if(!drag)return[p.hx,p.hy];
+  if(i===drag.i)return[drag.x,drag.y];
+  // 주변 점은 잡은 점과 같은 방향으로 평행이동 → 뾰족하게 모이지 않고 넓은 덩어리로 딸려옴
+  const g=pts[drag.i],w=weight(i,drag.i)*.9;return[p.hx+(drag.x-g.hx)*w,p.hy+(drag.y-g.hy)*w];
+})}
+function step(){
+  const T=targets(),thick=Math.min(1,roll.result.thickness);
+  for(let i=0;i<N;i++){
+    const p=pts[i],j=(i+N-1)%N,k=(i+1)%N,a=pts[j],b=pts[k];
+    // 치즈처럼: 속도(관성) 없이 목표로 끈적하게 따라감 → 출렁임 없음. 주변 점은 늦게 따라와 늘어나는 느낌
+    const lx=((a.x-T[j][0])+(b.x-T[k][0]))/2-(p.x-T[i][0]),ly=((a.y-T[j][1])+(b.y-T[k][1]))/2-(p.y-T[i][1]);
+    const K=drag&&i===drag.i?.35:.13;
+    p.vx=(T[i][0]-p.x)*K+lx*.15;p.vy=(T[i][1]-p.y)*K+ly*.15;
+  }
+  for(const p of pts){p.x+=p.vx;p.y+=p.vy;p.thin=(.85+.15*thick)*(1-.35*smooth((Math.hypot(p.x-p.rx,p.y-p.ry)-p.thin0)/(p.tear-p.thin0)));p.lift=Math.hypot(p.x-Cf.x,p.y-Cf.y)<foldR}
+}
+function release(){
+  const T=targets(),g=drag.i;
+  if(Math.hypot(drag.x-Cf.x,drag.y-Cf.y)<Rf+16){            // 속 근처 → 그 자리에 붙음
+    pts.forEach((q,i)=>{const w=weight(i,g);if(w>.3){q.hx=T[i][0];q.hy=T[i][1]}});
+    sfx.pop();
+  }else sfx.boing();                                          // 아니면 천천히 원위치로 줄어듦
+  sfx.stretchStop();drag=null;
+}
+function inTri(x,y,a,b,c){
+  const d1=(x-b[0])*(a[1]-b[1])-(a[0]-b[0])*(y-b[1]),d2=(x-c[0])*(b[1]-c[1])-(b[0]-c[0])*(y-c[1]),d3=(x-a[0])*(c[1]-a[1])-(c[0]-a[0])*(y-a[1]);
+  return!((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0));
+}
+// 속 위 샘플 점 중 접힌 피(fold→끝점 사이 띠)에 덮인 비율
+function calcCoverage(){
+  const Fp=pts.map(foldPt),Lp=pts.map((p,i)=>p.lift?[p.x,p.y]:Fp[i]);let n=0;
+  for(const[x,y]of samples){
+    for(let i=0;i<N;i++){const j=(i+1)%N;if(!pts[i].lift&&!pts[j].lift)continue;
+      if(inTri(x,y,Fp[i],Fp[j],Lp[j])||inTri(x,y,Fp[i],Lp[j],Lp[i])){n++;break}}
+  }
+  return n/samples.length;
+}
+function squeeze(){
+  if(drag){sfx.stretchStop();drag=null}
+  const lift=pts.map(p=>clamp((Math.hypot(p.rx-Cf.x,p.ry-Cf.y)-Math.hypot(p.x-Cf.x,p.y-Cf.y))/(Math.hypot(p.rx-Cf.x,p.ry-Cf.y)-Rf*.3),0,1)),thin=pts.map(p=>p.thin);
+  const uniformity=clamp(1-2.2*std(thin)-1.1*std(lift)-(1-mean(thin))*.8,0,1);
+  pts.wrapResult={coverage:+coverage.toFixed(3),uniformity:+uniformity.toFixed(3),
+    thickness:pts.map((p,i)=>+(thin[i]*(.4+.6*lift[i])).toFixed(3))};
+  state='gather';stateT=0;showAct(false);$('#hint').textContent='꾹…!';
+  pts.forEach(p=>{p.hx=Cf.x+Math.cos(p.a)*6;p.hy=Cf.y+Math.sin(p.a)*6});sfx.squish();
+}
+
+/* ---------- 5. 자르기 ---------- */
+function tryCut(s){
+  const dx=s.x1-s.x0,dy=s.y1-s.y0,L=Math.hypot(dx,dy);if(L<80)return false;
+  const t=clamp(((Cf.x-s.x0)*dx+(Cf.y-s.y0)*dy)/(L*L),0,1);
+  if(Math.hypot(s.x0+dx*t-Cf.x,s.y0+dy*t-Cf.y)>Rm*.9)return false;
+  // 칼 선과 떡 중심 사이 거리 = 단면이 중심에서 벗어난 정도
+  cut={offset:Math.abs((Cf.x-s.x0)*dy-(Cf.y-s.y0)*dx)/L};
+  state='cut';stateT=0;sfx.cut();$('#hint').textContent='쩍!';return true;
+}
+
+/* ---------- 6. 점수 ---------- */
+function scoreParts(r){
+  const roll=20*clamp(1-Math.abs(r.roll.size-1)*1.6,0,1)*(.4+.6*r.roll.roundness)*clamp(1-Math.abs(r.roll.thickness-1)*1.2,0,1);
+  const place=15*clamp(1-r.place.beanOffset/50*.6-r.place.fruitOffset/30*.4,0,1);
+  const wrap=r.wrap.coverage*30+r.wrap.uniformity*15;
+  const cutS=20*clamp(1-r.cut.offset/(r.cut.radius*.55),0,1);
+  return{roll:Math.round(roll),place:Math.round(place),wrap:Math.round(wrap),cut:Math.round(cutS)};
+}
+function commentOf(r){
+  if(r.score>=90)return'완벽한 쫀득함!';
+  const p=r.parts,ratio={roll:p.roll/20,place:p.place/15,wrap:p.wrap/45,cut:p.cut/20},worst=Object.keys(ratio).sort((a,b)=>ratio[a]-ratio[b])[0];
+  if(worst==='roll')return r.roll.thickness<.85?'피가 너무 얇아요':r.roll.thickness>1.2?'피가 너무 두꺼워요':'피가 울퉁불퉁해요';
+  if(worst==='place')return'속이 한쪽으로 쏠렸어요';
+  if(worst==='wrap')return r.wrap.coverage<.95?'과일이 삐져나왔어요':'한쪽만 두꺼워요';
+  return'단면이 가운데를 비껴갔어요';
+}
+// 최종 결과 객체 (다음 단계/서버로 넘길 값)
+function finish(){
+  const r={nickname:nick,fruit:fruitId,fruitName:F.name,portion:chosen.v,roll:roll.result,place:place.result,wrap:pts.wrapResult,
+    cut:{offset:+cut.offset.toFixed(1),radius:Rm},durationMs:Math.round(performance.now()-startTime)};
+  r.parts=scoreParts(r);r.score=r.parts.roll+r.parts.place+r.parts.wrap+r.parts.cut;r.comment=commentOf(r);res=r;
+  go('result');$('#play').hidden=true;$('#result').hidden=false;$('#comment').textContent=r.comment;$('#who').textContent=nick;
+  $('#stats').innerHTML=[['밀기',r.parts.roll,20],['속 넣기',r.parts.place,15],['감싸기',r.parts.wrap,45],['자르기',r.parts.cut,20]].map(([n,v,m])=>`<li>${n}<b>${v}<small>/${m}</small></b></li>`).join('');
+  const t0=performance.now(),el=$('#score');(function up(now){const k=Math.min(1,(now-t0)/700);el.textContent=Math.round(r.score*k);if(k<1)requestAnimationFrame(up)})(t0);
+  submitScore(r);
+  window.MochiGame.result=r;document.dispatchEvent(new CustomEvent('mochi:done',{detail:r}));
+}
+
+/* ---------- 그리기 ---------- */
+function drawPlate(s=1){ctx.save();ctx.translate(C.x,C.y);ctx.scale(s,s);sticker(ctx,c=>circ(c,0,0,170),GRAY,7,4);circ(ctx,0,0,156);ctx.strokeStyle=WHITE;ctx.lineWidth=4;ctx.stroke();ctx.restore()}
+function drawBall(r){
+  sticker(ctx,c=>circ(c,0,0,r),WHITE,7,4);
+  ctx.save();circ(ctx,0,0,r);ctx.clip();
+  ctx.fillStyle=GRAY;ctx.fillRect(-r,-r,2*r,2*r);ctx.fillStyle=WHITE;circ(ctx,-r*.1,-r*.14,r*.97);ctx.fill();
+  ctx.fillStyle=GRAY;FLOUR.slice(0,18).forEach(d=>{circ(ctx,d[0]*r*.8,d[1]*r*.8,d[2]*r);ctx.fill()});
+  ctx.restore();circ(ctx,0,0,r);ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke();
+}
+function drawBoard(dx){
+  ctx.save();ctx.translate(dx,0);
+  sticker(ctx,c=>{c.beginPath();c.roundRect(14,140,332,120,26)},GRAY,7,4);
+  portions.forEach(p=>{if(p===chosen)return;ctx.save();ctx.translate(p.x,p.y);drawBall(p.r);ctx.restore()});
+  ctx.restore();
+}
+function drawFlatDough(){
+  const P=dough.r.map((r,i)=>[C.x+Math.cos(A(i))*r,C.y+Math.sin(A(i))*r]);
+  sticker(ctx,c=>smoothPath(c,P),WHITE,6,4);
+  ctx.save();smoothPath(ctx,P);ctx.clip();
+  const t=dough?doughThick():1;if(t<.8){ctx.globalAlpha=clamp((.8-t)*1.5,0,.45);ctx.fillStyle=GRAY;ctx.fill();ctx.globalAlpha=1}  // 얇아지면 접시가 비침
+  ctx.fillStyle=GRAY;FLOUR.forEach(d=>{circ(ctx,C.x+d[0]*IDEAL,C.y+d[1]*IDEAL,d[2]*IDEAL);ctx.fill()});
+  ctx.restore();smoothPath(ctx,P);ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke();
+}
+function drawPin(x,y,a){
+  ctx.save();ctx.translate(x,y);ctx.rotate(a);
+  for(const s of[-1,1])sticker(ctx,c=>{c.beginPath();c.roundRect(s<0?-128:96,-9,32,18,9)},'#D9A86C',4,3.5);
+  sticker(ctx,c=>{c.beginPath();c.roundRect(-98,-17,196,34,14)},'#F1D3A8',5,4);
+  ctx.strokeStyle='#E2BC8A';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-80,-6);ctx.lineTo(70,-6);ctx.stroke();
+  ctx.restore();
+}
+function drawFilling(at,item,lift=0){
+  if(lift){ctx.fillStyle='rgba(59,40,51,.15)';ell(ctx,at[0],at[1]+6,item.r*.8,item.r*.3);ctx.fill()}
+  ctx.save();ctx.translate(at[0],at[1]-lift);item.draw(ctx,item.r);ctx.restore();
+}
+function drawBase(){
+  const Fp=pts.map(foldPt),B=pts.map((p,i)=>p.lift?Fp[i]:[p.x,p.y]);
+  sticker(ctx,c=>smoothPath(c,B),WHITE,6,4);
+  ctx.save();smoothPath(ctx,B);ctx.clip();
+  ctx.fillStyle=GRAY;FLOUR.forEach(d=>{circ(ctx,C.x+d[0]*IDEAL,C.y+d[1]*IDEAL,d[2]*IDEAL);ctx.fill()});
+  pts.forEach((p,i)=>{const j=(i+1)%N;if(p.lift||p.thin>.97)return;   // 늘어나 얇아진 곳
+    ctx.beginPath();ctx.moveTo(...Fp[i]);ctx.lineTo(...B[i]);ctx.lineTo(...B[j]);ctx.lineTo(...Fp[j]);ctx.globalAlpha=(1-p.thin)*.5;ctx.fill()});
+  ctx.restore();smoothPath(ctx,B);ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke();
+}
+function drawFlap(){
+  const Fp=pts.map(foldPt),Lp=pts.map((p,i)=>p.lift?[p.x,p.y]:Fp[i]),segs=[];
+  for(let i=0;i<N;i++)if(pts[i].lift||pts[(i+1)%N].lift)segs.push(i);
+  if(!segs.length)return;
+  // 이어진 구간마다 한 덩어리로: 둥근 반죽 덩어리 + 높이 그림자 + 아래쪽 볼륨 그늘
+  const on=i=>pts[i].lift||pts[(i+1)%N].lift,runs=[];
+  if(segs.length===N)runs.push([0,N]);
+  else for(let i=0;i<N;i++)if(on(i)&&!on((i+N-1)%N)){let n=0;while(on((i+n)%N))n++;runs.push([i,n])}
+  for(const[s,n]of runs){
+    const idx=Array.from({length:n+1},(_,k)=>(s+k)%N),Fr=idx.map(i=>Fp[i]),Lr=idx.map(i=>Lp[i]);
+    const body=()=>smoothPath(ctx,[...Fr,...Lr.slice().reverse()]);
+    const edge=()=>{ctx.beginPath();ctx.moveTo(...Lr[0]);for(let k=1;k<Lr.length-1;k++)ctx.quadraticCurveTo(Lr[k][0],Lr[k][1],(Lr[k][0]+Lr[k+1][0])/2,(Lr[k][1]+Lr[k+1][1])/2);ctx.lineTo(...Lr[Lr.length-1])};
+    ctx.save();ctx.translate(0,7);body();ctx.fillStyle='rgba(59,40,51,.22)';ctx.fill();ctx.restore();
+    body();ctx.fillStyle=WHITE;ctx.fill();
+    ctx.save();body();ctx.clip();
+    ctx.fillStyle=GRAY;FLOUR.slice(0,24).forEach(d=>{circ(ctx,Cf.x+d[0]*Rf*1.2,Cf.y+d[1]*Rf*1.2,d[2]*IDEAL*.8);ctx.fill()});
+    ctx.translate(0,-8);edge();ctx.strokeStyle=GRAY;ctx.lineWidth=18;ctx.stroke();   // 아래쪽 가장자리 안쪽 그늘 = 두께
+    ctx.restore();
+    edge();ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.stroke();
+  }
+}
+function popPose(t){          // 스쿼시 & 스트레치
+  if(t<140){const k=Math.sin(t/140*Math.PI/2);return{sy:1-.22*k,sx:1+.18*k,lift:0}}
+  if(t<480){const u=Math.sin((t-140)/340*Math.PI);return{sy:1+.14*u,sx:1-.08*u,lift:u*48}}
+  const sy=1-.3*Math.exp(-(t-480)/240)*Math.cos((t-480)/55);return{sy,sx:1+(1-sy)*.9,lift:0};
+}
+function drawMochi({sx,sy,lift}){
+  ctx.save();ctx.translate(Cf.x,Cf.y+Rm);
+  ctx.fillStyle='rgba(59,40,51,.15)';ell(ctx,0,6,Rm*sx*(1-lift/160),10);ctx.fill();
+  ctx.translate(0,-lift);ctx.scale(sx,sy);ctx.translate(0,-Rm);drawBall(Rm);ctx.restore();
+}
+// 단면: 흰 피 / 팥 앙금 / 과일. 피 두께는 감싸기 결과, 크기는 칼이 지난 위치에 따라
+function drawSection(){
+  const kb=Math.sqrt(Math.max(.05,1-(cut.offset/Rm)**2)),Rs=Rm*kb;
+  sticker(ctx,c=>circ(c,0,0,Rs),WHITE,7,4);
+  const th=pts.wrapResult.thickness,poly=th.map((t,i)=>{const nb=Math.min(th[(i+N-1)%N],th[(i+1)%N]),ring=5+16*(t*.6+nb*.4),a=pts[i].a;return[Math.cos(a)*(Rm-ring)*kb,Math.sin(a)*(Rm-ring)*kb]});
+  const fr=F.r*.92*Math.sqrt(Math.max(0,1-(cut.offset/F.r)**2)),fx=clamp(place.result.fruitOffset*.4,0,14);
+  ctx.save();smoothPath(ctx,poly);ctx.clip();ctx.translate(fx,0);
+  circ(ctx,0,0,fr+13);ctx.save();ctx.clip();BEAN.section(ctx,fr+13);ctx.restore();circ(ctx,0,0,fr+13);ctx.lineWidth=2.5;ctx.strokeStyle=INK;ctx.stroke();
+  if(fr>3){circ(ctx,0,0,fr);ctx.save();ctx.clip();F.section(ctx,fr);ctx.restore();circ(ctx,0,0,fr);ctx.lineWidth=2.5;ctx.strokeStyle=INK;ctx.stroke()}
+  ctx.restore();
+}
+function drawCut(t){
+  if(t<160){drawMochi({sx:1,sy:1,lift:0});if(ptr)drawKnife(...ptr);return}
+  const e=easeBack(clamp((t-160)/500,0,1));
+  for(const s of[-1,1]){
+    ctx.save();ctx.translate(Cf.x+s*e*32,Cf.y);ctx.rotate(s*e*.1);
+    ctx.beginPath();ctx.rect(s<0?-Rm-20:0,-Rm-20,Rm+20,2*Rm+40);ctx.clip();
+    drawSection();ctx.lineWidth=8;ctx.strokeStyle=INK;ctx.beginPath();ctx.moveTo(0,-Rm);ctx.lineTo(0,Rm);ctx.stroke();
+    ctx.restore();
+  }
+}
+function drawKnife(x,y){
+  ctx.save();ctx.translate(x,y);ctx.rotate(-.5);
+  sticker(ctx,c=>{c.beginPath();c.moveTo(0,0);c.lineTo(10,-4);c.lineTo(70,-4);c.lineTo(70,10);c.quadraticCurveTo(20,12,0,0);c.closePath()},WHITE,3,3.5);
+  sticker(ctx,c=>{c.beginPath();c.roundRect(68,-6,46,18,7)},INK,3,3.5);
+  ctx.restore();
+}
+function draw(){
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#FFFDFA';ctx.fillRect(0,0,cv.width,cv.height);
+  const d=view.dpr*view.s;ctx.setTransform(d,0,0,d,view.dpr*view.ox,view.dpr*view.oy);
+  if(shake>.3)ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  ctx.lineJoin=ctx.lineCap='round';
+  if(state==='pick'){drawBoard(0);portions.forEach(p=>{ctx.save();ctx.translate(p.x,p.y-(p===hover?6:0));drawBall(p.r);ctx.restore()})}
+  else if(state==='toPlate'){
+    const e=easeOut(clamp(stateT/650,0,1));drawPlate(easeBack(e));drawBoard(-400*e);
+    ctx.save();ctx.translate(chosen.x+(C.x-chosen.x)*e,chosen.y+(C.y-chosen.y)*e-Math.sin(e*Math.PI)*70);drawBall(chosen.r);ctx.restore();
+  }else drawPlate();
+  if(state==='roll'){drawFlatDough();if(ptr||roll.on)drawPin(roll.on?roll.x:ptr[0],roll.on?roll.y:ptr[1],roll.a);else drawPin(C.x,C.y+150,0)}
+  if(state==='place'){
+    drawFlatDough();
+    if(place.bean)drawFilling(place.bean,BEAN);
+    const item=place.phase==='bean'?BEAN:F;
+    if(place.drop){const k=clamp(place.drop.t/280,0,1);drawFilling(place.drop.pos,item,90*(1-k*k))}
+    else{const p=swingPos();ctx.fillStyle='rgba(59,40,51,.18)';ell(ctx,p[0],p[1]+4,item.r*.7,item.r*.25);ctx.fill();drawFilling(p,item,90)}
+    if(place.fruit&&!place.drop)drawFilling(place.fruit,F);
+  }
+  if(state==='wrap'||state==='gather'){
+    drawBase();drawFilling([Cf.x,Cf.y],BEAN);drawFilling(place.fruit,F);drawFlap();
+    if(state==='wrap'&&!drag&&hover>=0){circ(ctx,pts[hover].x,pts[hover].y,8);ctx.fillStyle=GRAY;ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle=INK;ctx.stroke()}
+  }
+  if(state==='pop')drawMochi(popPose(stateT));
+  if(state==='knife'){
+    drawMochi({sx:1,sy:1,lift:0});
+    drawKnife(...(ptr||[C.x+110,C.y-120]));
+  }
+  if(state==='cut'||state==='result')drawCut(state==='cut'?stateT:9999);
+  ctx.font='18px Jua, sans-serif';ctx.textAlign='center';
+  floaters.forEach(f=>{ctx.globalAlpha=1-f.t/70;ctx.lineWidth=5;ctx.strokeStyle=WHITE;ctx.strokeText(f.text,f.x,f.y-f.t*.6);ctx.fillStyle=INK;ctx.fillText(f.text,f.x,f.y-f.t*.6)});ctx.globalAlpha=1;
+}
+
+/* ---------- 입력 ---------- */
+$('#act').onclick=()=>{if($('#act').hidden)return;if(state==='roll')finishRoll();else if(state==='wrap')squeeze()};
+$('#retry').onclick=()=>start(fruitId);
+function toLocal(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left-view.ox)/view.s,(e.clientY-r.top-view.oy)/view.s]}
+function nearest(x,y){let best=-1,bd=42;pts.forEach((p,i)=>{const d=Math.hypot(p.x-x,p.y-y);if(d<bd){bd=d;best=i}});return best}
+cv.addEventListener('pointerdown',e=>{
+  sfx.a();const[x,y]=toLocal(e);ptr=[x,y];
+  try{cv.setPointerCapture(e.pointerId)}catch{}
+  if(state==='pick')pickAt(x,y);
+  else if(state==='roll'){Object.assign(roll,{on:true,x,y,t:performance.now()});sfx.stretchStart()}
+  else if(state==='place')dropItem();
+  else if(state==='wrap'){const i=nearest(x,y);if(i<0)return;drag={i,x,y,lx:x,ly:y,sp:0,id:e.pointerId};sfx.stretchStart();cv.style.cursor='grabbing'}
+  else if(state==='knife')swipe={x0:x,y0:y,x1:x,y1:y};
+});
+cv.addEventListener('pointermove',e=>{
+  const[x,y]=toLocal(e);ptr=[x,y];
+  if(state==='roll'&&roll.on)return rollMove(x,y,performance.now());
+  if(drag&&e.pointerId===drag.id){   // 쫀쫀함: 멀리 당길수록 점점 버팀 (고무줄처럼, 찢어지지 않음)
+    const p=pts[drag.i],dx=x-p.rx,dy=y-p.ry,d=Math.hypot(dx,dy)||1,s=p.tear*.7,k=d<s?1:(s+p.tear*.3*Math.tanh((d-s)/(p.tear*.3)))/d;drag.x=p.rx+dx*k;drag.y=p.ry+dy*k;return}
+  if(swipe){swipe.x1=x;swipe.y1=y;if(Math.hypot(x-Cf.x,y-Cf.y)>Rm&&tryCut(swipe))swipe=null}   // 떡을 지나 빠져나오는 순간 바로 잘림
+  if(state==='pick'){hover=portions.find(p=>Math.hypot(x-p.x,y-p.y)<p.r+10)||-1;cv.style.cursor=hover!==-1?'pointer':'default'}
+  else if(state==='wrap'){hover=nearest(x,y);cv.style.cursor=hover>=0?'grab':'default'}
+  else cv.style.cursor=state==='roll'||state==='knife'?'none':state==='place'?'pointer':'default';
+});
+function up(e){
+  if(state==='roll'&&roll.on){roll.on=false;sfx.stretchStop()}
+  if(drag&&e.pointerId===drag.id){release();cv.style.cursor='grab'}
+  if(swipe){swipe=null;$('#hint').innerHTML='칼로 떡을 끝까지 가로질러 슥 그어 주세요'}
+}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('pointerleave',()=>{if(!roll?.on&&!drag)ptr=null});
+
+function resize(){
+  const r=cv.getBoundingClientRect();view.dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(r.width*view.dpr);cv.height=Math.round(r.height*view.dpr);
+  view.s=Math.min(r.width/W,r.height/H);view.ox=(r.width-W*view.s)/2;view.oy=(r.height-H*view.s)/2;
+}
+new ResizeObserver(resize).observe($('#stage'));
+
+let last=performance.now(),acc=0;
+function loop(now){
+  const dt=Math.min(50,now-last);last=now;stateT+=dt;
+  if(state==='toPlate'&&stateT>700){sfx.thud();startRoll()}
+  if(state==='place'&&place.drop&&(place.drop.t+=dt)>=280)landItem();
+  if(state==='wrap'||state==='gather'){acc+=dt;while(acc>=1000/60){step();acc-=1000/60}}
+  if(drag){const sp=Math.hypot(drag.x-drag.lx,drag.y-drag.ly);drag.lx=drag.x;drag.ly=drag.y;drag.sp=drag.sp*.7+sp*.3;
+    const p=pts[drag.i];sfx.stretch(Math.hypot(p.x-p.rx,p.y-p.ry)/p.tear,drag.sp)}
+  if(state==='wrap'&&++frame%3===0){coverage=calcCoverage();gauge(coverage,'');showAct(coverage>=.88)}
+  if(state==='gather'&&stateT>520){state='pop';stateT=0;flags={}}
+  if(state==='pop'){
+    if(stateT>140&&!flags.p){flags.p=1;sfx.pop()}
+    if(stateT>480&&!flags.l){flags.l=1;sfx.thud()}
+    if(stateT>1500)go('knife');
+  }
+  if(state==='cut'&&stateT>1100)finish();
+  shake*=.85;floaters.forEach(f=>f.t++);floaters=floaters.filter(f=>f.t<70);
+  draw();requestAnimationFrame(loop);
+}
+
+// 외부 진입점: MochiGame.start('shine'), MochiGame.result, 'mochi:done' 이벤트
+window.MochiGame={FRUITS,BEAN,start,result:null};
+
+// self-check
+console.assert(inTri(0,0,[-1,-1],[1,-1],[0,1])&&!inTri(5,5,[-1,-1],[1,-1],[0,1]),'inTri');
+{const best=scoreParts({roll:{size:1,roundness:1,thickness:1},place:{beanOffset:0,fruitOffset:0},wrap:{coverage:1,uniformity:1},cut:{offset:0,radius:80}});
+ console.assert(best.roll+best.place+best.wrap+best.cut===100,'max score 100');}
+
+// 닉네임 (이 브라우저에만 기억)
+let nick='';
+try{$('#nick').value=localStorage.getItem('mochi-nick')||''}catch{}
+$('#go').disabled=!$('#nick').value.trim();
+$('#nick').oninput=()=>{$('#go').disabled=!$('#nick').value.trim()};
+$('#intro').onsubmit=e=>{
+  e.preventDefault();nick=$('#nick').value.trim();if(!nick)return;
+  try{localStorage.setItem('mochi-nick',nick)}catch{}
+  sfx.a();$('#intro').hidden=true;
+};
+
+/* ---------- 랭킹 TOP10 (claude.ai 아티팩트의 공유 db, 없으면 숨김) ---------- */
+let db=null,me=null,top10=[],rankState='loading';
+function renderRank(){
+  const ol=$('#rankList');ol.replaceChildren();
+  top10.forEach((d,i)=>{   // 다른 사람이 쓴 값: textContent + 범위 제한
+    const li=document.createElement('li'),n=document.createElement('span'),nm=document.createElement('span'),sc=document.createElement('b');
+    if(d.id===me)li.className='me';n.className='n';nm.className='nm';
+    n.textContent=i+1;nm.textContent=String(d.nick||'익명').slice(0,8);sc.textContent=clamp(Math.round(+d.score||0),0,100);
+    li.append(n,nm,sc);ol.append(li);
+  });
+  $('#rankMsg').textContent=rankState==='error'?'랭킹을 불러오지 못했어요':rankState==='loading'?'불러오는 중…':top10.length?'':'아직 기록이 없어요. 첫 번째 주인공이 되어 보세요';
+  const mi=top10.findIndex(d=>d.id===me);$('#rankBtn').textContent=mi>=0?`랭킹 ${mi+1}위!`:'랭킹 TOP10';
+}
+// 한 사람당 최고점 1개만 저장
+async function submitScore(r){
+  if(!db||!me)return;
+  try{const ref=db.collection('scores').doc(me),cur=await ref.get(),old=cur.exists?+cur.data().score||0:-1;
+    if(r.score>old)await ref.set({nick:nick.slice(0,8),score:r.score,fruit:r.fruit,at:Date.now()});
+  }catch(e){console.warn('score not saved',e)}
+}
+(async()=>{
+  if(!window.claude?.use)return;
+  try{const[d,u]=await Promise.all([claude.use('db'),claude.use('user')]);if(!d||!u)return;me=await u.id();if(!me)return;db=d}catch{return}
+  $('#rankBtn').hidden=$('#rankLink').hidden=false;
+  const timer=setTimeout(()=>{if(rankState==='loading'){rankState='error';renderRank()}},10000);
+  db.collection('scores').orderBy('score','desc').limit(10).onSnapshot(
+    s=>{clearTimeout(timer);top10=s.docs.map(x=>({id:x.id,...x.data()}));rankState='ok';renderRank()},
+    ()=>{clearTimeout(timer);rankState='error';renderRank()});
+})();
+$('#rankBtn').onclick=$('#rankLink').onclick=()=>{$('#rank').hidden=false};
+$('#rankClose').onclick=()=>{$('#rank').hidden=true};
+
+start(new URLSearchParams(location.search).get('fruit'));
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
