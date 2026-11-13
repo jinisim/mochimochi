@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>과일 찹쌀떡 만들기</title>
+<title>지니랑 찹쌀떡 만들기</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +21,11 @@ h1{font-family:'Jua',sans-serif;font-size:30px;font-weight:400;line-height:1.1}
 .chip{font-family:'Jua',sans-serif;font-size:16px;background:var(--white);border:3px solid var(--ink);border-radius:99px;padding:6px 14px;box-shadow:0 4px 0 var(--ink);white-space:nowrap}
 #stage{flex:1;min-height:0;position:relative}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.fruits{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px}
+.fruits[hidden]{display:none}
+.fruit{display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Jua',sans-serif;font-size:14px;color:var(--ink);background:var(--white);border:3px solid var(--ink);border-radius:16px;box-shadow:0 5px 0 var(--ink);padding:6px 2px 5px;cursor:pointer;transition:transform .06s,box-shadow .06s}
+.fruit:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.fruit canvas{position:static;width:56px;height:56px}
 .bottom{height:220px;flex:none}
 .panel{height:100%;display:flex;flex-direction:column;gap:12px}
 #meter{display:flex;flex-direction:column;gap:12px}
@@ -58,6 +63,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .btns{display:flex;gap:12px;margin-top:auto}.btns .btn{flex:1}
 .link{font-family:'Gowun Dodum',sans-serif;font-size:15px;color:var(--ink);background:none;border:none;text-decoration:underline;cursor:pointer;align-self:center;padding:6px}
 #rank{position:absolute;inset:0;z-index:6;background:var(--bg);display:flex;flex-direction:column;gap:14px;padding:24px max(16px,env(safe-area-inset-left,0px))}
+#rank[hidden]{display:none}
 #rank h2{font-family:'Jua',sans-serif;font-size:30px;font-weight:400}
 #rankList{list-style:none;display:flex;flex-direction:column;gap:9px;flex:1;min-height:0;overflow:auto;padding:2px 2px 8px}
 #rankList li{display:flex;align-items:center;gap:12px;background:var(--white);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);padding:7px 14px}
@@ -83,11 +89,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
         <div class="row"><span><span id="label"></span><b id="pct">0%</b></span><span id="sub"></span></div>
         <div class="gauge"><i id="bar"></i></div>
       </div>
+      <div class="fruits" id="fruits" hidden></div>
       <p class="hint" id="hint"></p>
       <button class="btn" id="act" hidden></button>
     </section>
     <section class="panel" id="result" hidden>
-      <p class="done"><span id="who"></span>의 <b id="score">0</b>점 찹쌀떡 완성!</p>
+      <p class="done"><span id="who"></span>의 <b id="score">0</b>점 <span id="fw"></span> 찹쌀떡 완성!</p>
       <p class="comment" id="comment"></p>
       <ul class="stats" id="stats"></ul>
       <div class="btns"><button class="btn" id="rankBtn" hidden>랭킹 TOP10</button><button class="btn sub" id="retry">다시하기</button></div>
@@ -175,19 +182,6 @@ const FRUITS={
       c.strokeStyle='#FFD592';c.lineWidth=2.5;c.beginPath();for(let k=0;k<9;k++){const a=k/9*TAU;c.moveTo(0,0);c.lineTo(Math.cos(a)*r,Math.sin(a)*r)}c.stroke();
       c.fillStyle='#FFF0D2';circ(c,0,0,r*.18);c.fill();
     }},
-  persimmon:{name:'홍시',r:44,color:'#F2742B',
-    draw(c,r){
-      sticker(c,c=>ell(c,0,0,r,r*.92),this.color,5,4);
-      c.fillStyle='#FFA266';ell(c,-r*.38,-r*.38,r*.26,r*.15,-.7);c.fill();
-      c.beginPath();for(let k=0;k<4;k++){const a=k/4*TAU+Math.PI/4;c.moveTo(0,0);c.quadraticCurveTo(Math.cos(a-.5)*r*.3,Math.sin(a-.5)*r*.3,Math.cos(a)*r*.4,Math.sin(a)*r*.4);c.quadraticCurveTo(Math.cos(a+.5)*r*.3,Math.sin(a+.5)*r*.3,0,0)}
-      c.fillStyle='#7C8F3A';c.fill();c.lineWidth=3;c.strokeStyle=INK;c.stroke();
-      c.fillStyle='#5E4A2E';circ(c,0,0,r*.08);c.fill();c.stroke();
-    },
-    section(c,r){
-      c.fillStyle=this.color;circ(c,0,0,r);c.fill();c.fillStyle='#F99A55';circ(c,0,0,r*.7);c.fill();
-      c.strokeStyle='#FFC48E';c.lineWidth=3;c.beginPath();for(let k=0;k<8;k++){const a=k/8*TAU;c.moveTo(0,0);c.lineTo(Math.cos(a)*r*.5,Math.sin(a)*r*.5)}c.stroke();
-      c.fillStyle='#FFD9AE';circ(c,0,0,r*.12);c.fill();
-    }},
 };
 
 /* ---------- 효과음 (Web Audio 합성) ---------- */
@@ -227,7 +221,7 @@ function start(id){
   portions=[...PORTIONS].sort(()=>R()-.5).map((v,k)=>({v,x:70+k*110,y:196,r:38*Math.sqrt(v)}));
   chosen=null;dough=null;roll=null;place=null;pts=null;drag=null;hover=-1;coverage=0;swipe=null;cut=null;res=null;
   floaters=[];shake=0;flags={};startTime=performance.now();ptr=null;
-  $('#fruitName').textContent=F.name;$('#play').hidden=false;$('#result').hidden=true;
+  $('#fruitName').hidden=true;$('#fruits').hidden=true;$('#play').hidden=false;$('#result').hidden=true;
   go('pick');
 }
 function go(s){
@@ -286,12 +280,25 @@ function finishRoll(){
 const doughCenter=()=>{let x=0,y=0;dough.r.forEach((r,i)=>{x+=C.x+Math.cos(A(i))*r;y+=C.y+Math.sin(A(i))*r});return[x/N,y/N]};
 function swingPos(){const base=place.phase==='bean'?doughCenter():place.bean,t=stateT;return[base[0]+Math.sin(t*.0026)*60,base[1]+Math.sin(t*.0041+1)*36]}
 function dropItem(){
-  if(place.drop)return;place.drop={pos:swingPos(),t:0};
+  if(place.drop||place.phase==='choose')return;place.drop={pos:swingPos(),t:0};
 }
 function landItem(){
   const p=place.drop.pos;place[place.phase]=p;place.drop=null;sfx.thud();sfx.pop();shake=4;
-  if(place.phase==='bean'){place.phase='fruit';stateT=0;$('#hint').innerHTML=`이번엔 ${F.name}! 앙금 가운데에 올려요`}
+  if(place.phase==='bean'){place.phase='choose';$('#fruits').hidden=false;$('#hint').innerHTML='어떤 과일을 넣을까요? 하나 골라요'}
   else setTimeout(startWrap,450);
+}
+// 팥을 올린 뒤 과일 고르기 → 고른 과일이 흔들리며 내려올 준비
+function chooseFruit(id){
+  if(state!=='place'||place.phase!=='choose')return;
+  fruitId=id;F=FRUITS[id];sfx.pop();
+  $('#fruits').hidden=true;$('#fruitName').textContent=F.name;$('#fruitName').hidden=false;
+  place.phase='fruit';stateT=0;$('#hint').innerHTML=`이번엔 ${F.name}! 앙금 가운데에 올려요`;
+}
+for(const[id,f]of Object.entries(FRUITS)){     // 과일 버튼: 게임 속 그림을 작게 그려서 사용
+  const b=document.createElement('button'),c=document.createElement('canvas'),t=document.createElement('span'),g=c.getContext('2d');
+  b.type='button';b.className='fruit';b.setAttribute('aria-label',f.name);c.width=c.height=112;
+  g.scale(2,2);g.translate(28,30);g.scale(22/f.r,22/f.r);g.lineJoin=g.lineCap='round';f.draw(g,f.r);
+  t.textContent=f.name;b.append(c,t);b.onclick=()=>chooseFruit(id);$('#fruits').append(b);
 }
 
 /* ---------- 4. 감싸기 ---------- */
@@ -304,7 +311,7 @@ function startWrap(){
   pts=dough.r.map((r,i)=>{const a=A(i),x=C.x+Math.cos(a)*r,y=C.y+Math.sin(a)*r,tear=(Math.hypot(x-Cf.x,y-Cf.y)+60)*th;
     return{a,rx:x,ry:y,hx:x,hy:y,x,y,vx:0,vy:0,thin:1,lift:false,tear,thin0:tear*.6}});
   samples=[];for(let y=-Rf;y<=Rf;y+=6)for(let x=-Rf;x<=Rf;x+=6)if(x*x+y*y<=(Rf*.95)**2)samples.push([Cf.x+x,Cf.y+y]);
-  go('wrap');gauge(0,'');
+  go('wrap');gauge(0,'');combo=0;
 }
 const ringD=(i,j)=>{const d=Math.abs(i-j);return Math.min(d,N-d)};
 const weight=(i,j)=>{const d=ringD(i,j);return d>6?0:Math.exp(-d*d/(2*SIG*SIG))};
@@ -331,9 +338,18 @@ function release(){
   const T=targets(),g=drag.i;
   if(Math.hypot(drag.x-Cf.x,drag.y-Cf.y)<Rf+16){            // 속 근처 → 그 자리에 붙음
     pts.forEach((q,i)=>{const w=weight(i,g);if(w>.3){q.hx=T[i][0];q.hy=T[i][1]}});
-    sfx.pop();
-  }else sfx.boing();                                          // 아니면 천천히 원위치로 줄어듦
+    sfx.pop();combo++;
+    // 피가 자리 잡은 뒤 덮인 양이 얼마나 늘었는지 보고 칭찬
+    const before=coverage,at=[drag.x,drag.y],c=combo;
+    setTimeout(()=>{if(state==='wrap')cheer(at,calcCoverage()-before,c)},350);
+  }else{sfx.boing();combo=0}                                  // 아니면 천천히 원위치로 줄어듦 + 콤보 끊김
   sfx.stretchStop();drag=null;
+}
+let combo=0;
+function cheer([x,y],gain,c){
+  const big=gain>=.15;
+  if(big){floaters.push({x,y:y-10,text:'쫀득!',t:0,size:34});sfx.tone('triangle',520,1040,.12,.2)}
+  if(c>=2){const n=Math.min(c,5);floaters.push({x,y:y+(big?36:-10),text:'쫀'.repeat(n)+'!',t:0,size:18+n*3});sfx.tone('sine',600+n*120,900+n*160,.09,.18)}
 }
 function inTri(x,y,a,b,c){
   const d1=(x-b[0])*(a[1]-b[1])-(a[0]-b[0])*(y-b[1]),d2=(x-c[0])*(b[1]-c[1])-(b[0]-c[0])*(y-c[1]),d3=(x-a[0])*(c[1]-a[1])-(c[0]-a[0])*(y-a[1]);
@@ -389,7 +405,7 @@ function finish(){
   const r={nickname:nick,fruit:fruitId,fruitName:F.name,portion:chosen.v,roll:roll.result,place:place.result,wrap:pts.wrapResult,
     cut:{offset:+cut.offset.toFixed(1),radius:Rm},durationMs:Math.round(performance.now()-startTime)};
   r.parts=scoreParts(r);r.score=r.parts.roll+r.parts.place+r.parts.wrap+r.parts.cut;r.comment=commentOf(r);res=r;
-  go('result');$('#play').hidden=true;$('#result').hidden=false;$('#comment').textContent=r.comment;$('#who').textContent=nick;
+  go('result');$('#play').hidden=true;$('#result').hidden=false;$('#comment').textContent=r.comment;$('#who').textContent=nick;$('#fw').textContent=F.name;
   $('#stats').innerHTML=[['밀기',r.parts.roll,20],['속 넣기',r.parts.place,15],['감싸기',r.parts.wrap,45],['자르기',r.parts.cut,20]].map(([n,v,m])=>`<li>${n}<b>${v}<small>/${m}</small></b></li>`).join('');
   const t0=performance.now(),el=$('#score');(function up(now){const k=Math.min(1,(now-t0)/700);el.textContent=Math.round(r.score*k);if(k<1)requestAnimationFrame(up)})(t0);
   submitScore(r);
@@ -513,7 +529,7 @@ function draw(){
     if(place.bean)drawFilling(place.bean,BEAN);
     const item=place.phase==='bean'?BEAN:F;
     if(place.drop){const k=clamp(place.drop.t/280,0,1);drawFilling(place.drop.pos,item,90*(1-k*k))}
-    else{const p=swingPos();ctx.fillStyle='rgba(59,40,51,.18)';ell(ctx,p[0],p[1]+4,item.r*.7,item.r*.25);ctx.fill();drawFilling(p,item,90)}
+    else if(place.phase!=='choose'){const p=swingPos();ctx.fillStyle='rgba(59,40,51,.18)';ell(ctx,p[0],p[1]+4,item.r*.7,item.r*.25);ctx.fill();drawFilling(p,item,90)}
     if(place.fruit&&!place.drop)drawFilling(place.fruit,F);
   }
   if(state==='wrap'||state==='gather'){
@@ -526,8 +542,12 @@ function draw(){
     drawKnife(...(ptr||[C.x+110,C.y-120]));
   }
   if(state==='cut'||state==='result')drawCut(state==='cut'?stateT:9999);
-  ctx.font='18px Jua, sans-serif';ctx.textAlign='center';
-  floaters.forEach(f=>{ctx.globalAlpha=1-f.t/70;ctx.lineWidth=5;ctx.strokeStyle=WHITE;ctx.strokeText(f.text,f.x,f.y-f.t*.6);ctx.fillStyle=INK;ctx.fillText(f.text,f.x,f.y-f.t*.6)});ctx.globalAlpha=1;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  floaters.forEach(f=>{   // 톡 튀어나왔다가(크게 → 제자리) 위로 떠오르며 사라짐
+    const s=(f.size||18)*(1+.6*Math.exp(-f.t/5)*Math.cos(f.t/3)),y=f.y-f.t*.6;
+    ctx.font=`${s}px Jua, sans-serif`;ctx.globalAlpha=Math.min(1,(70-f.t)/25);
+    ctx.lineWidth=s/4;ctx.strokeStyle=WHITE;ctx.strokeText(f.text,f.x,y);ctx.fillStyle=INK;ctx.fillText(f.text,f.x,y);
+  });ctx.globalAlpha=1;ctx.textBaseline='alphabetic';
 }
 
 /* ---------- 입력 ---------- */
@@ -640,7 +660,7 @@ async function submitScore(r){
 $('#rankBtn').onclick=$('#rankLink').onclick=()=>{$('#rank').hidden=false};
 $('#rankClose').onclick=()=>{$('#rank').hidden=true};
 
-start(new URLSearchParams(location.search).get('fruit'));
+start();
 requestAnimationFrame(loop);
 </script>
 </body>
